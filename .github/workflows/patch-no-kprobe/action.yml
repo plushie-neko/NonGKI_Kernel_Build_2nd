@@ -119,7 +119,7 @@ runs:
             fi
 
           # Check syscall hook
-          elif [[ ${{ env.HOOK_METHOD }} == "syscall" ]]; then
+          elif [[ "${{ env.HOOK_METHOD }}" == "syscall" ]]; then
             # Core
             cp /tmp/Patches/syscall_hook_patches.sh ./
             bash syscall_hook_patches.sh ./
@@ -183,6 +183,35 @@ runs:
                 if [[ "${{ env.BASEBAND_GUARD_ENABLE }}" != "true" ]]; then
                     cp /tmp/Patches/backport_selinux_patches.sh ./
 
+                    bash backport_selinux_patches.sh
+                    echo "[+] Patched SELinux."
+                else
+                    echo "[-] Skipped SELinux Patch."
+                fi
+            fi
+
+          elif [[ "${{ env.HOOK_METHOD }}" == "none" ]]; then
+            echo "[-] Hooks patcher disabled, skipping syscall hooks."
+
+            # Still apply backport patches if needed
+            if [[ ${{ env.FIRST_VERSION }} -le 4 ]] && [[ ${{ env.SECOND_VERSION }} -le 9 ]]; then
+                cp /tmp/Patches/backport_patches.sh ./
+                bash backport_patches.sh
+
+                if [[ "${{ env.BASEBAND_GUARD_ENABLE }}" != "true" ]]; then
+                    cp /tmp/Patches/backport_selinux_patches.sh ./
+                    bash backport_selinux_patches.sh
+                    echo "[+] Patched SELinux."
+                else
+                    echo "[-] Skipped SELinux Patch."
+                fi
+            else
+                cp /tmp/Patches/backport_patches.sh ./
+                bash backport_patches.sh
+                echo "executed backport patch successfully."
+
+                if [[ "${{ env.BASEBAND_GUARD_ENABLE }}" != "true" ]]; then
+                    cp /tmp/Patches/backport_selinux_patches.sh ./
                     bash backport_selinux_patches.sh
                     echo "[+] Patched SELinux."
                 else
